@@ -6,7 +6,8 @@ import {
   getCurrentLocation,
   getLocationName,
 } from "./services/locationService";
-import Loader from "./loader";
+import Loader from "./Loader";
+
 import useDebounce from "./hooks/useDebounce";
 
 function App() {
