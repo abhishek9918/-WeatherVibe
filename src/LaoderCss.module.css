@@ -1,0 +1,89 @@
+@keyframes rainFall {
+  0% {
+    transform: translateY(-30px) rotate(5deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(120px) rotate(5deg);
+    opacity: 0;
+  }
+}
+
+@keyframes lightningFlash {
+  0%,
+  20%,
+  40%,
+  60%,
+  80%,
+  100% {
+    opacity: 0;
+  }
+  10%,
+  30%,
+  50% {
+    opacity: 0.9;
+    filter: brightness(1.5) hue-rotate(15deg);
+  }
+}
+
+@keyframes cloudDrift {
+  0% {
+    transform: translateX(-20px) translateY(0);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateX(20px) translateY(-8px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-20px) translateY(0);
+    opacity: 0.8;
+  }
+}
+
+@keyframes skyGlow {
+  0% {
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.5),
+      0 0 24px rgba(34, 211, 238, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(34, 211, 238, 0.8),
+      0 0 36px rgba(34, 211, 238, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.5),
+      0 0 24px rgba(34, 211, 238, 0.3);
+  }
+}
+
+.rainFall1 {
+  animation: rainFall 1.3s infinite linear;
+}
+
+.rainFall2 {
+  animation: rainFall 1.5s infinite linear 0.4s;
+}
+
+.rainFall3 {
+  animation: rainFall 1.7s infinite linear 0.8s;
+}
+
+.lightningFlash {
+  animation: lightningFlash 2.5s infinite step-end;
+}
+
+.cloudDrift {
+  animation: cloudDrift 4s infinite ease-in-out;
+}
+
+.skyGlow {
+  animation: skyGlow 3s infinite ease-in-out;
+}
+
+.loaderBg {
+  background: transparent;
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  transition: all 0.3s ease-in-out;
+}

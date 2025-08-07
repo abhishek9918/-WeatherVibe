@@ -1,42 +1,50 @@
 import { useEffect, useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
 import "./App.css";
 import axios from "axios";
 import ForecastCard from "./ForecastCard";
-// import LocationApp from "./LocationApp";
 import {
   getCurrentLocation,
   getLocationName,
 } from "./services/locationService";
+import Loader from "./loader";
+import useDebounce from "./hooks/useDebounce";
 
 function App() {
   const API_KEY = import.meta.env.VITE_API_KEY;
-  const [currentWeatherData, setCurrentWheatherData] = useState("");
+  const [loader, setLoader] = useState(false);
+  const [currentWeatherData, setCurrentWeatherData] = useState("");
   const [forecastData, setForecastData] = useState([]);
   const [query, setQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
+  const [isUserTyping, setIsUserTyping] = useState(false);
+  const [locationDenied, setLocationDenied] = useState(false);
+  const debouncedQuery = useDebounce(query, 400);
 
-  function fetchWeather(city) {
+  async function fetchWeather(city) {
     const ApiUrl = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${city}&aqi=yes`;
-    axios
-      .get(ApiUrl)
-      .then((response) => {
-        setCurrentWheatherData(response.data);
-      })
-      .catch(() => {});
+    try {
+      setLoader(true);
+      const response = await axios.get(ApiUrl);
+      setCurrentWeatherData(response.data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoader(false);
+    }
   }
-  const fetchForecastData = (city) => {
+  const fetchForecastData = async (city) => {
     const ApiUrl = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${city}&days=3&aqi=yes&alerts=yes`;
-    axios
-      .get(ApiUrl)
-      .then((response) => {
-        const { forecast } = response?.data;
-
-        setForecastData(forecast.forecastday);
-      })
-      .catch(() => {});
+    try {
+      setLoader(true);
+      const response = await axios.get(ApiUrl);
+      setForecastData(response?.data?.forecast?.forecastday);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoader(false);
+    }
   };
+
   const fetchSuggestions = async (input) => {
     try {
       const res = await fetch(
@@ -54,30 +62,35 @@ function App() {
       .then(async (pos) => {
         const name = await getLocationName(pos.lat, pos.lng);
         if (name) {
-          fetchWeather(name);
-          fetchForecastData(name);
+          fetchWeatherInfo(name, false);
         }
       })
       .catch((err) => {
-        setError(err);
+        setLocationDenied(true);
       });
   }, []);
   useEffect(() => {
-    const delayDebounce = setTimeout(() => {
-      if (query) fetchSuggestions(query);
-    }, 400);
-
-    return () => clearTimeout(delayDebounce);
-  }, [query]);
+    if (debouncedQuery && isUserTyping) {
+      fetchSuggestions(debouncedQuery);
+    }
+  }, [debouncedQuery, isUserTyping]);
   const handleCitySelect = (cityName) => {
-    setQuery(cityName);
-    setSuggestions([]);
+    fetchWeatherInfo(cityName);
+  };
+  const fetchWeatherInfo = (cityName, updateQuery = true) => {
+    setLocationDenied(false);
+    if (updateQuery) {
+      setQuery(cityName);
+      setIsUserTyping(false);
+    }
+
     fetchWeather(cityName);
     fetchForecastData(cityName);
+    setSuggestions([]);
   };
   return (
     <>
-      {/* <LocationApp /> */}
+      <Loader loader={loader} />
       <div className="w-full max-w-4xl mx-auto card-bg rounded-3xl shadow-xl p-6 md:p-8 animate-zoomIn">
         <div className="text-center mb-8">
           <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 animate-zoomIn">
@@ -87,6 +100,12 @@ function App() {
             Your sleek weather companion
           </p>
         </div>
+        {locationDenied && (
+          <div className="text-yellow-400 text-center text-sm md:text-base mb-4 bg-yellow-900/20 border border-yellow-500 p-3 rounded-lg">
+            📍 Location permission was denied. Please search for a city
+            manually.
+          </div>
+        )}
 
         <div className="flex justify-center mb-8">
           <div className="relative w-full max-w-md">
@@ -95,7 +114,8 @@ function App() {
               onChange={(e) => {
                 const val = e.target.value;
                 setQuery(val);
-                fetchSuggestions(val);
+                setIsUserTyping(true);
+                setLocationDenied(false);
               }}
               type="text"
               placeholder="Search for a city..."
@@ -108,7 +128,7 @@ function App() {
                   handleCitySelect(query);
                 }
               }}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white p-3 rounded-xl hover:from-blue-700 hover:to-cyan-600 transition duration-300 animate-neonPulse">
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-gradient-to-r from-blue-600 to-cyan-500 text-white p-3 rounded-xl hover:from-blue-700 hover:to-cyan-600 ">
               <svg
                 className="w-5 h-5"
                 fill="none"
@@ -137,115 +157,93 @@ function App() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* <div
-            id="currentDetails"
-            className="card-bg rounded-2xl p-6 text-gray-100 animate-zoomIn hover-lift"
-            style={{ animationDelay: "0.2s" }}>
-            <h2 className="text-2xl font-bold mb-4 text-blue-300">New Delhi</h2>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-5xl md:text-6xl font-extrabold text-cyan-300">
-                  {currentWeatherData?.current?.temp_c}
-                  °C
-                </p>
-                <p className="text-gray-300 text-base md:text-lg">
-                  Mostly Cloudy
-                </p>
-              </div>
-              <div className="animate-bounce">
-                <svg
-                  className="w-16 h-16 text-amber-300"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
+        {currentWeatherData?.current ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div
+              id="currentDetails"
+              className="card-bg rounded-2xl p-6 text-gray-100 animate-zoomIn hover-lift"
+              style={{ animationDelay: "0.2s" }}>
+              <h2 className="text-2xl font-bold mb-2 text-blue-300">
+                {currentWeatherData?.location?.name}
+              </h2>
+              <p className="text-gray-400 text-sm md:text-base mb-0.5">
+                {currentWeatherData?.location?.region},{" "}
+                {currentWeatherData?.location?.country}
+              </p>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-5xl md:text-6xl font-extrabold text-cyan-300">
+                    {currentWeatherData?.current?.temp_c}°C
+                  </p>
+                  <p className="text-gray-300 text-base md:text-lg">
+                    {currentWeatherData?.current?.condition?.text}
+                  </p>
+                </div>
+                <div className="animate-bounce">
+                  <img
+                    src={`https:${currentWeatherData?.current?.condition?.icon}`}
+                    alt={currentWeatherData?.current?.condition?.text}
+                    className="w-16 h-16"
                   />
-                </svg>
+                </div>
               </div>
             </div>
-          </div> */}
-          <div
-            id="currentDetails"
-            className="card-bg rounded-2xl p-6 text-gray-100 animate-zoomIn hover-lift"
-            style={{ animationDelay: "0.2s" }}>
-            <h2 className="text-2xl font-bold mb-4 text-blue-300">
-              {currentWeatherData?.location?.name}
-            </h2>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-5xl md:text-6xl font-extrabold text-cyan-300">
-                  {currentWeatherData?.current?.temp_c}°C
-                </p>
-
-                <p className="text-gray-300 text-base md:text-lg">
-                  {currentWeatherData?.current?.condition?.text}
-                </p>
-              </div>
-
-              <div className="animate-bounce">
-                <img
-                  src={`https:${currentWeatherData?.current?.condition?.icon}`}
-                  alt={currentWeatherData?.current?.condition?.text}
-                  className="w-16 h-16"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div
-            id="details"
-            className="card-bg rounded-2xl p-6 text-gray-100 animate-zoomIn hover-lift"
-            style={{ animationDelay: "0.3s" }}>
-            <h3 className="text-xl font-bold mb-4 text-blue-300">Details</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-gray-300 text-sm md:text-base">Humidity</p>
-                <p className="text-lg font-semibold text-cyan-400">
-                  {currentWeatherData?.current?.humidity}%
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-300 text-sm md:text-base">Wind</p>
-                <p className="text-lg font-semibold text-cyan-400">
-                  {currentWeatherData?.current?.wind_kph} km/h
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-300 text-sm md:text-base">Pressure</p>
-                <p className="text-lg font-semibold text-cyan-400">
-                  {currentWeatherData?.current?.pressure_mb} hPa
-                </p>
-              </div>
-
-              <div>
-                <p className="text-gray-300 text-sm md:text-base">Feels Like</p>
-                <p className="text-lg font-semibold text-cyan-400">
-                  {currentWeatherData?.current?.feelslike_c}°C
-                </p>
+            {/* Details Card */}
+            <div
+              id="details"
+              className="card-bg rounded-2xl p-6 text-gray-100 animate-zoomIn hover-lift"
+              style={{ animationDelay: "0.3s" }}>
+              <h3 className="text-xl font-bold mb-4 text-blue-300">Details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-gray-300 text-sm md:text-base">Humidity</p>
+                  <p className="text-lg font-semibold text-cyan-400">
+                    {currentWeatherData?.current?.humidity}%
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-300 text-sm md:text-base">Wind</p>
+                  <p className="text-lg font-semibold text-cyan-400">
+                    {currentWeatherData?.current?.wind_kph} km/h
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-300 text-sm md:text-base">Pressure</p>
+                  <p className="text-lg font-semibold text-cyan-400">
+                    {currentWeatherData?.current?.pressure_mb} hPa
+                  </p>
+                </div>
+                <div>
+                  <p className="text-gray-300 text-sm md:text-base">
+                    Feels Like
+                  </p>
+                  <p className="text-lg font-semibold text-cyan-400">
+                    {currentWeatherData?.current?.feelslike_c}°C
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="text-center text-gray-400 mt-4">
+            🔍 No weather data yet. Search for a city above.
+          </div>
+        )}
 
-        <div className="mt-8" id="forecast">
-          <h3 className="text-xl font-bold text-blue-300 mb-4">
-            {forecastData.length}-Day Forecast
-          </h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {forecastData.length > 0 &&
-              forecastData.map((item, i) =>
+        {forecastData.length > 0 && (
+          <div className="mt-8" id="forecast">
+            <h3 className="text-xl font-bold text-blue-300 mb-4">
+              {forecastData.length}-Day Forecast
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {forecastData.map((item, i) =>
                 item ? <ForecastCard key={i} item={item} i={i} /> : null
               )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </>
   );
