@@ -102,7 +102,7 @@ function App() {
           </p>
         </div>
         {locationDenied && (
-          <div className="text-yellow-400 text-center text-sm md:text-base mb-4 bg-yellow-900/20 border border-yellow-500 p-3 rounded-lg">
+          <div className="text-yellow-400  text-sm md:text-base mb-4 bg-yellow-900/20 border border-yellow-500 p-3 xs:p-2 rounded-lg text-center">
             📍 Location permission was denied. Please search for a city
             manually.
           </div>
