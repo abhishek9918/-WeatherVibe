@@ -1,0 +1,46 @@
+.forecastContainer {
+  display: flex;
+  overflow-x: auto;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: thin;
+  scrollbar-color: #4b6cb7 #1a202c;
+}
+
+.forecastContainer::-webkit-scrollbar {
+  height: 8px;
+}
+
+.forecastContainer::-webkit-scrollbar-track {
+  background: #1a202c;
+  border-radius: 4px;
+}
+
+.forecastContainer::-webkit-scrollbar-thumb {
+  background: #4b6cb7;
+  border-radius: 4px;
+}
+
+.forecastContainer::-webkit-scrollbar-thumb:hover {
+  background: #3b5998;
+}
+
+.forecastContainer > div {
+  flex: 0 0 auto;
+  width: 150px;
+  scroll-snap-align: start;
+}
+
+@media (min-width: 768px) {
+  .forecast-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+
+  .forecast-container > div {
+    width: auto;
+  }
+}

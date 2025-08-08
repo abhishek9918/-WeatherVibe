@@ -7,7 +7,7 @@ function ForecastCard({ item, i }) {
   return (
     <div
       key={i}
-      className="card-bg rounded-xl p-4 text-center text-gray-100 animate-zoomIn hover-lift"
+      className="card-bg rounded-xl p-4 text-center text-gray-100 animate-zoomIn hover-lift flex-shrink-0 w-40"
       style={{ animationDelay: `${0.4 + i * 0.1}s` }}>
       <p className="font-semibold text-base md:text-lg">Day {i + 1}</p>
       <img

@@ -51,14 +51,59 @@
   background: rgba(17, 24, 39, 0.9);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.15);
+  /* background: rgba(17, 24, 39, 0.9);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(59, 130, 246, 0.3); */
 }
 .hover-lift {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-.hover-lift:hover {
+/* .hover-lift:hover {
   transform: translateY(-5px);
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+} */
+.hover-lift:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
 }
+.weather-icon {
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+}
+
 .body {
   @apply bg-gradient-to-br from-gray-900 to-blue-900 min-h-screen flex items-center justify-center p-4;
+}
+html,
+body {
+  overflow-x: hidden;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.shimmer-text {
+  background: linear-gradient(90deg, #3b82f6, #22d3ee, #3b82f6);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s infinite linear;
+}
+.rain {
+  background-image: url("/rain.png");
+  animation: rainAnim 1s linear infinite;
+}
+
+@keyframes rainAnim {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: -100px 100px;
+  }
 }

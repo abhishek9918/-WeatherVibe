@@ -7,10 +7,11 @@ import {
   getLocationName,
 } from "./services/locationService";
 import Loader from "./Loader";
-
 import useDebounce from "./hooks/useDebounce";
 
 function App() {
+  const [weatherType, setWeatherType] = useState("clear");
+
   const API_KEY = import.meta.env.VITE_API_KEY;
   const [loader, setLoader] = useState(false);
   const [currentWeatherData, setCurrentWeatherData] = useState("");
@@ -26,6 +27,10 @@ function App() {
     try {
       setLoader(true);
       const response = await axios.get(ApiUrl);
+      const code = response.data.current.condition.code;
+      if (code) {
+        setWeatherType(checkWeatherType(code));
+      }
       setCurrentWeatherData(response.data);
     } catch (err) {
       console.error(err);
@@ -33,6 +38,22 @@ function App() {
       setLoader(false);
     }
   }
+  const checkWeatherType = (code) => {
+    const rainCodes = [
+      1063, 1150, 1153, 1180, 1183, 1186, 1189, 1192, 1195, 1240, 1243, 1246,
+    ];
+    const snowCodes = [
+      1066, 1114, 1117, 1210, 1213, 1216, 1219, 1222, 1225, 1255, 1258,
+    ];
+    const cloudyCodes = [1003, 1006, 1009, 1030, 1135, 1147];
+    const clearCodes = [1000];
+
+    if (rainCodes.includes(code)) return "rain";
+    if (snowCodes.includes(code)) return "snow";
+    if (cloudyCodes.includes(code)) return "cloudy";
+    if (clearCodes.includes(code)) return "clear";
+    return "clear";
+  };
   const fetchForecastData = async (city) => {
     const ApiUrl = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${city}&days=3&aqi=yes&alerts=yes`;
     try {
@@ -89,12 +110,16 @@ function App() {
     fetchForecastData(cityName);
     setSuggestions([]);
   };
+
   return (
     <>
       <Loader loader={loader} />
-      <div className="w-full max-w-4xl mx-auto card-bg rounded-3xl shadow-xl p-6 md:p-8 animate-zoomIn">
+
+      <div
+        className="w-full max-w-4xl mx-auto card-bg rounded-3xl shadow-xl p-6 md:p-8 animate-zoomIn overflow-x-hidden;
+">
         <div className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 animate-zoomIn">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300 animate-zoomIn shimmer-text">
             WeatherVibe
           </h1>
           <p className="text-gray-300 mt-2 text-base md:text-lg">
@@ -185,7 +210,7 @@ function App() {
                   <img
                     src={`https:${currentWeatherData?.current?.condition?.icon}`}
                     alt={currentWeatherData?.current?.condition?.text}
-                    className="w-16 h-16"
+                    className="w-16 h-16 weather-icon"
                   />
                 </div>
               </div>
@@ -234,11 +259,12 @@ function App() {
         )}
 
         {forecastData.length > 0 && (
-          <div className="mt-8" id="forecast">
-            <h3 className="text-xl font-bold text-blue-300 mb-4">
+          <div id="forecast">
+            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-center mb-4 bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent drop-shadow-lg animate-pulse my-4">
               {forecastData.length}-Day Forecast
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            </h2>
+
+            <div className="flex overflow-x-auto p-4 space-x-4">
               {forecastData.map((item, i) =>
                 item ? <ForecastCard key={i} item={item} i={i} /> : null
               )}
